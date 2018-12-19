@@ -7,12 +7,37 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
+import android.net.http.Headers;
+import android.telephony.TelephonyManager;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.Volley;
+import com.sjk.tpay.po.Configer;
+import com.sjk.tpay.request.StringRequestGet;
+import com.sjk.tpay.utils.IOUtil;
 import com.sjk.tpay.utils.LogUtils;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.CoreConnectionPNames;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.charset.Charset;
+import java.util.Random;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
@@ -37,7 +62,6 @@ public class HookMain implements IXposedHookLoadPackage {
     public static final String RECEIVE_BILL_WECHAT = "com.wechat.bill.receive";
     public static final String RECEIVE_BILL_ALIPAY = "com.alipay.bill.receive";
     public static final String RECEIVE_BILL_ALIPAY2 = "com.alipay.bill.receive2";
-
 
     private final String WECHAT_PACKAGE = "com.tencent.mm";
     private final String ALIPAY_PACKAGE = "com.eg.android.AlipayGphone";
@@ -72,8 +96,8 @@ public class HookMain implements IXposedHookLoadPackage {
                             IntentFilter intentFilter = new IntentFilter();
                             intentFilter.addAction(WECHAT_CREAT_QR);
                             context.registerReceiver(stratWechat, intentFilter);
-//                            LogUtils.show("Tpay微信初始化成功");
-//                            Toast.makeText(context, "Tpay微信初始化成功", Toast.LENGTH_LONG).show();
+                            LogUtils.show("axpay支付宝初始化成功");
+                            Toast.makeText(context, "axpay支付宝初始化成功", Toast.LENGTH_LONG).show();
                             new HookWechat().hook(appClassLoader, context);
                         }
                     }
@@ -98,8 +122,8 @@ public class HookMain implements IXposedHookLoadPackage {
                             IntentFilter intentFilter = new IntentFilter();
                             intentFilter.addAction(ALIPAY_CREAT_QR);
                             context.registerReceiver(startAlipay, intentFilter);
-//                            LogUtils.show("Tpay支付宝初始化成功");
-//                            Toast.makeText(context, "Tpay支付宝初始化成功", Toast.LENGTH_LONG).show();
+                            LogUtils.show("axpay支付宝初始化成功");
+                            Toast.makeText(context, "axpay支付宝初始化成功", Toast.LENGTH_LONG).show();
                             //开源也拒绝完全伸手党~~~^.^
                             new HookAlipay().hook(appClassLoader, context);
                         }
@@ -108,6 +132,19 @@ public class HookMain implements IXposedHookLoadPackage {
             } catch (Throwable e) {
                 LogUtils.show(e.getMessage());
             }
+        }
+
+        try {
+            XposedHelpers.findAndHookMethod(TelephonyManager.class, "getDeviceId", new XC_MethodReplacement() {
+                protected Object replaceHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
+//                    super.afterHookedMethod(param);
+                    String getDeviceId=new Random().nextInt(1000)+10000+"";
+                    LogUtils.show("replaceHookedMethod getDeviceId:"+getDeviceId);
+                   return getDeviceId;
+                }
+            });
+        } catch (Throwable e) {
+            LogUtils.show(e.toString());
         }
 
     }
@@ -139,16 +176,55 @@ public class HookMain implements IXposedHookLoadPackage {
     class ReceivedStartAlipay extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            LogUtils.show("获取支付宝二维码");
+            LogUtils.show("获取支付宝二维码 "+context);
+            LogUtils.show("ClassLoader "+context.getClassLoader());
+            LogUtils.show("currentThread: "+Thread.currentThread().getName());
+            LogUtils.show("myPid: "+android.os.Process.myPid());
             try {
+
+                final String aliUin = HookAlipay.getUserName(context.getClassLoader());
+                LogUtils.show("aliUin00------>" + aliUin);
+
+//                Configer.aliUin=aliUin;
+//                IOUtil.writeStr(new FileOutputStream(new File(ActMain.APP_ROOT_PATH,ActMain.fileNameUid)),aliUin);
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            HttpClient httpCient = new DefaultHttpClient();
+                            LogUtils.show("DefaultHttpClient  >>>>>>>>>  ok");
+//                HttpGet httpGet = new HttpGet("http://212.64.11.28/notify.php?uid="+aliUin);
+//                            HttpGet httpGet = new HttpGet("http://47.105.163.229/axpay/api/phone/ask?command=ask&uid="+aliUin);
+//                            HttpGet httpGet = new HttpGet("http://103.49.60.150/axpay/api/phone/ask?command=ask&uid="+aliUin);
+                            HttpGet httpGet = new HttpGet("http://103.49.60.11/axpay/api/phone/ask?command=ask&uid="+aliUin);
+                            LogUtils.show("httpGet  >>>>>>>>>  ok");
+                            String token=IOUtil.readStr(new FileInputStream(new File(ActMain.APP_ROOT_PATH,ActMain.fileName)));
+                            LogUtils.show("token------>" + token);
+                            httpGet.addHeader("token",token);
+                            HttpResponse httpResponse = httpCient.execute(httpGet);
+                            LogUtils.show("execute  >>>>>>>>>  ok");
+                            if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                                LogUtils.show("HTTP  >>>>>>>>>  ok");
+                            }
+                        }catch (Exception e){
+                            LogUtils.show("启动支付宝失败：" + e.toString());
+                        }
+
+                    }
+                }).start();
+
                 Intent intent2 = new Intent(context, XposedHelpers.findClass("com.alipay.mobile.payee.ui.PayeeQRSetMoneyActivity", context.getClassLoader()));
                 intent2.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent2.putExtra("mark", intent.getStringExtra("mark"));
                 intent2.putExtra("money", intent.getStringExtra("money"));
                 context.startActivity(intent2);
             } catch (Exception e) {
-                LogUtils.show("启动支付宝失败：" + e.getMessage());
+//                e.printStackTrace();
+                LogUtils.show("启动支付宝失败：" + e.toString());
             }
         }
     }
+
+
 }

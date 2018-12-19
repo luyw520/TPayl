@@ -3,6 +3,7 @@ package com.sjk.tpay;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 import com.alibaba.fastjson.JSON;
 import com.sjk.tpay.bll.ApiBll;
@@ -43,20 +44,31 @@ public class ReceiverMain extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+
+
+        LogUtils.show("Receiver >>>>>>>>>>>\t"+intent.getAction());
         try {
             String data = intent.getStringExtra("data");
             if (lastMsg.contentEquals(data)) {//暂时不管
                 return;
             }
+            LogUtils.show("Receiver  Data>>>>>>>>>>>\n"+data);
+
 //            if (!intent.getAction().contentEquals(RECEIVE_BILL_ALIPAY)
 //                    && lastMsg.contentEquals(data)) {
 //                return;
 //            }
             lastMsg = intent.getStringExtra("data");
+            QrBean qrBean = JSON.parseObject(data, QrBean.class);
+
+            if (intent.getAction().equals("com.alipay.bill.receive2")){
+                qrBean = JSON.parseObject(data, QrBean.class);
+                new ApiBll().payQR(qrBean);
+            }
 
             switch (intent.getAction()) {
                 case RECEIVE_QR_WECHAT:
-                    QrBean qrBean = JSON.parseObject(data, QrBean.class);
+//                    QrBean qrBean = JSON.parseObject(data, QrBean.class);
                     mApiBll.sendQR(qrBean.getUrl(), qrBean.getMark_sell());
                     break;
                 case RECEIVE_BILL_WECHAT:
@@ -67,9 +79,11 @@ public class ReceiverMain extends BroadcastReceiver {
                     mApiBll.sendQR(qrBean.getUrl(), qrBean.getMark_sell());
                     break;
                 case RECEIVE_BILL_ALIPAY2:
+//                    PayUtils.dealAlipayWebTrade(context, data);
                     qrBean = JSON.parseObject(data, QrBean.class);
-                    LogUtils.show("支付宝发送支付成功任务2：" + qrBean.getOrder_id() + "|" + qrBean.getMark_sell() + "|" + qrBean.getMoney());
+//                    LogUtils.show("");
                     new ApiBll().payQR(qrBean);
+//                    mApiBll.payQR(qrBean);
                     break;
                 case RECEIVE_BILL_ALIPAY:
                     cook = data;

@@ -2,20 +2,28 @@ package com.sjk.tpay.bll;
 
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
+import com.sjk.tpay.ActMain;
 import com.sjk.tpay.HKApplication;
+import com.sjk.tpay.HookAlipay;
 import com.sjk.tpay.po.BaseMsg;
 import com.sjk.tpay.po.Configer;
 import com.sjk.tpay.po.QrBean;
 import com.sjk.tpay.request.FastJsonRequest;
+import com.sjk.tpay.utils.IOUtil;
 import com.sjk.tpay.utils.LogUtils;
 import com.sjk.tpay.utils.PayUtils;
 import com.sjk.tpay.utils.SaveUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -42,9 +50,22 @@ public class ApiBll {
         if (!Configer.getInstance().getUrl().toLowerCase().startsWith("http")) {
             return;//防止首次启动还没有配置，就一直去轮循
         }
-
-        mQueue.add(new FastJsonRequest(Configer.getInstance().getUrl()
-                + Configer.getInstance().getPage() + "?command=ask", succ, null));
+//        String aliUin = HookAlipay.getUserName(HKApplication.app.getClassLoader());
+//        String aliUid=null;
+//        try {
+//             aliUid=IOUtil.readStr(new FileInputStream(new File(ActMain.APP_ROOT_PATH,ActMain.fileNameUid)));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        if (TextUtils.isEmpty(aliUid)) {
+            mQueue.add(new FastJsonRequest(Configer.getInstance().getUrl()
+                    + Configer.getInstance().getPage() + "?command=ask", succ, null));
+//        }else{
+//            LogUtils.show("aliUid:"+aliUid);
+//
+//            mQueue.add(new FastJsonRequest(Configer.getInstance().getUrl()
+//                    + Configer.getInstance().getPage() + "?command=ask&uid="+Configer.aliUin, succ, null));
+//        }
         mQueue.start();
     }
 
@@ -151,7 +172,7 @@ public class ApiBll {
                 return;
             }
             QrBean qrBean = response.getData(QrBean.class);
-            if (qrBean != null && qrBean.getMoney() > 0 && !TextUtils.isEmpty(qrBean.getMark_sell())) {
+            if (qrBean != null && qrBean.getMoney() != 0 && !TextUtils.isEmpty(qrBean.getMark_sell())) {
                 LogUtils.show("服务器需要新二维码：" + qrBean.getMoney() + "|" + qrBean.getMark_sell() + "|" + qrBean.getChannel());
                 if (qrBean.getChannel().contentEquals(QrBean.WECHAT)) {
                     PayUtils.getInstance().creatWechatQr(HKApplication.app, qrBean.getMoney()
@@ -163,5 +184,6 @@ public class ApiBll {
             }
         }
     };
+
 
 }

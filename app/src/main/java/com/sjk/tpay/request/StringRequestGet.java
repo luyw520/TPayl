@@ -47,8 +47,9 @@ public class StringRequestGet extends JsonRequest<String> {
      */
     @Override
     public Map<String, String> getHeaders() throws AuthFailureError {
-        addHeaders("token"
-                        , Configer.getInstance().getToken());
+        addHeaders("token", StrEncode
+                .encoderByDES(System.currentTimeMillis() + "|" + getUrl()
+                        , Configer.getInstance().getToken()));
         headers.putAll(super.getHeaders());
         return headers;
     }

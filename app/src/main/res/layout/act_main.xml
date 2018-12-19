@@ -14,6 +14,7 @@
         android:layout_marginLeft="12dp"
         android:layout_marginTop="20dp"
         android:layout_marginRight="12dp"
+        android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -24,7 +25,6 @@
             android:gravity="center"
             android:hint="您的服务器网址"
             android:singleLine="true"
-            android:visibility="gone"
             android:text="http://127.0.0.1/" />
     </android.support.design.widget.TextInputLayout>
 
@@ -133,18 +133,19 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:onClick="clsWechatPay"
-        android:text="测试微信支付"
+        android:text="打开微信支付"
+        android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@id/btn_alipay"
         app:layout_constraintTop_toBottomOf="@id/btn_submit" />
 
     <Button
         android:id="@+id/btn_alipay"
-        android:layout_width="120dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:onClick="clsAlipayPay"
-        android:text="测支付宝支付"
+        android:text="打开支付宝支付"
         app:layout_constraintLeft_toRightOf="@id/btn_wechat"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_submit" />
@@ -155,8 +156,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:onClick="clsAddQq"
-        android:src="@mipmap/icon_qq"
         android:visibility="gone"
+        android:src="@mipmap/icon_qq"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_alipay" />

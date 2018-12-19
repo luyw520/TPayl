@@ -9,11 +9,23 @@ import android.widget.Button;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.sjk.tpay.bll.ApiBll;
+import com.sjk.tpay.po.Configer;
 import com.sjk.tpay.po.QrBean;
+import com.sjk.tpay.utils.HttpUtils;
 import com.sjk.tpay.utils.LogUtils;
 import com.sjk.tpay.utils.PayUtils;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
 import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XC_MethodReplacement;
@@ -184,19 +196,38 @@ public class HookAlipay {
                     String content = PayUtils.getMidText(MessageInfo, "content='", "'");
                     if (content.contains("二维码收款") || content.contains("收到一笔转账")
                             || content.contains("成功收款")) {
+//                        LogUtils.show("支付宝收到支付订单2   content >>>>>>>>>>>>>\n" + content);
+
                         JSONObject jsonObject = JSON.parseObject(content);
                         String money = jsonObject.getString("content");
                         String mark = jsonObject.getString("assistMsg2");
-                        money = money.replace("￥", "").replace(" ", "");
+                        money = money.replace("￥", "").replaceAll(" ", "").trim();
+
                         String tradeNo = PayUtils.getMidText(MessageInfo, "tradeNO=", "&");
                         LogUtils.show("收到支付宝支付订单：" + tradeNo + "|" + money + "|" + mark);
 
+//                        HttpClient httpCient = new DefaultHttpClient();
+//                        HttpGet httpGet = new HttpGet(Configer.getInstance().getUrl()+Configer.getInstance().getPage()+"?command=do&mark_sell="+mark+"&money="+money+"&order_id="+tradeNo+"&mark_buy=");
+//                        HttpResponse httpResponse = httpCient.execute(httpGet);
+//
+//                        if (httpResponse.getStatusLine().getStatusCode() == 200) {
+//                            LogUtils.show("HTTP  >>>>>>>>>  ok");
+//                        }
                         QrBean qrBean = new QrBean();
+                        String ss = money;
+                        try {
+                            int time = (int) (Double.valueOf(ss)*100);
+                            qrBean.setMoney(time);
+                        } catch (NumberFormatException e) {
+                            e.printStackTrace();
+                        }
+
+
                         qrBean.setOrder_id(tradeNo);
-                        qrBean.setMoney(Integer.valueOf(money));
                         qrBean.setMark_sell(mark);
                         qrBean.setChannel(QrBean.ALIPAY);
 
+                        LogUtils.show("data--------->>>>"+ qrBean.toString());
                         Intent broadCastIntent = new Intent()
                                 .putExtra("data", qrBean.toString())
                                 .setAction(RECEIVE_BILL_ALIPAY2);
@@ -250,5 +281,12 @@ public class HookAlipay {
             e.printStackTrace();
         }
     }
+
+    public static String getUserName(ClassLoader cl) {
+        Object infoObject = XposedHelpers.callStaticMethod(XposedHelpers.findClass("com.alipay.android.widgets.asset.utils.UserInfoCacher", cl), "a");
+        Object userInfo = XposedHelpers.getObjectField(infoObject, "a");
+        return String.valueOf(XposedHelpers.callMethod(userInfo, "getUserId"));
+    }
+
 
 }

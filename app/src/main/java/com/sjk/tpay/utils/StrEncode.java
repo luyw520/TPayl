@@ -17,11 +17,11 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
 /**
- * @ Created by Dlg
+ * @ Created by 70
  * @ <p>TiTle:  StrEncode</p>
  * @ <p>Description: 字符串的DES对称加密类，和php端是相同方案的des</p>
  * @ date:  2018/09/17
- * @ QQ群：524901982
+ * @ QQ：646562924  麒麟
  */
 public class StrEncode {
 
@@ -34,14 +34,15 @@ public class StrEncode {
      * @return
      */
     public static String encoderByDES(String plainText, String pass) {
-        try {
-            byte[] result = coderByDES(plainText.getBytes("UTF-8"), pass,
-                    Cipher.ENCRYPT_MODE);
-            return byteArr2HexStr(result);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return "";
-        }
+//        try {
+//            byte[] result = coderByDES(plainText.getBytes("UTF-8"), pass,
+//                    Cipher.ENCRYPT_MODE);
+//            return byteArr2HexStr(result);
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            return "";
+//        }
+        return pass;
     }
 
     /**

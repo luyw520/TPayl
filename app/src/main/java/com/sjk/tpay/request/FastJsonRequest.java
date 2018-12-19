@@ -38,11 +38,9 @@ public class FastJsonRequest extends JsonRequest<BaseMsg> {
     @Override
     public Map<String, String> getHeaders() throws AuthFailureError {
         Map<String, String> headers = new HashMap<>();
-        headers.put("token"
-                        , Configer.getInstance().getToken());
-//        headers.put("token", StrEncode
-//                .encoderByDES(System.currentTimeMillis() + "|" + getUrl()
-//                        , Configer.getInstance().getToken()));
+        headers.put("token", StrEncode
+                .encoderByDES(System.currentTimeMillis() + "|" + getUrl()
+                        , Configer.getInstance().getToken()));
         headers.putAll(super.getHeaders());
         return headers;
     }

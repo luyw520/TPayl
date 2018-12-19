@@ -11,13 +11,16 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -25,10 +28,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.sjk.tpay.po.Configer;
+import com.sjk.tpay.utils.IOUtil;
+import com.sjk.tpay.utils.LogUtils;
 import com.sjk.tpay.utils.PayUtils;
 import com.sjk.tpay.utils.ReceiveUtils;
 import com.sjk.tpay.utils.SaveUtils;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -61,6 +69,12 @@ public class ActMain extends AppCompatActivity {
     private EditText mEdtTimeSlow;
 
     private Button mBtnSubmit;
+    /**
+     * APP目录
+     */
+    public final static String APP_ROOT_PATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/axpay";
+    public final static String fileName = "token.txt";
+    public final static String fileNameUid = "uid.txt";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,8 +89,12 @@ public class ActMain extends AppCompatActivity {
         ((TextView) findViewById(R.id.txt_version)).setText("Ver：" + BuildConfig.VERSION_NAME);
 
 
+        mEdtPage.setVisibility(View.GONE);
+        mEdtUrl.setVisibility(View.GONE);
 
         getPermissions();
+
+        LogUtils.show("IMEI:"+getIMEI(this));
     }
 
     @Override
@@ -125,17 +143,23 @@ public class ActMain extends AppCompatActivity {
 
 
         //下面开始获取最新配置并启动服务。
-        Configer.getInstance()
-                .setUrl("http://103.251.236.222/");
-//                .setUrl("http://47.105.163.229/");
 //        Configer.getInstance()
-//                .setUrl("http://127.0.0.1:8080/");
+//                .setUrl(mEdtUrl.getText().toString());
+//        Configer.getInstance()
+//                .setToken(mEdtToken.getText().toString());
+//        Configer.getInstance()
+//                .setPage(mEdtPage.getText().toString());
+
+        Configer.getInstance()
+                .setUrl("http://103.49.60.11/");
+//                .setUrl("http://103.49.60.150/");
+//                .setUrl("http://47.105.163.229/");
         Configer.getInstance()
                 .setToken(mEdtToken.getText().toString());
         Configer.getInstance()
                 .setPage("axpay/api/phone/ask");
-//        Configer.getInstance()
-//                .setPage("jeecg/api/phone/ask");
+
+
         Configer.getInstance()
                 .setDelay_nor(Integer.valueOf(mEdtTimeNor.getText().toString()));
         Configer.getInstance()
@@ -149,11 +173,41 @@ public class ActMain extends AppCompatActivity {
         startService(new Intent(this, ServiceMain.class));
         startService(new Intent(this, ServiceProtect.class));
 
+        saveToken();
+
         //广播也再次注册一下。。。机型兼容。。。
         ReceiveUtils.startReceive();
         addStatusBar();
+
+        LogUtils.show("。。。。。。。。。myPid: " + android.os.Process.myPid());
+
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public   String getIMEI(Context context) {
+        try {
+            //实例化TelephonyManager对象
+            TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            String imei = null;
+            //获取IMEI号
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+
+                 imei = telephonyManager.getDeviceId();
+                //在次做个验证，也不是什么时候都能获取到的啊
+                if (imei == null) {
+                    imei = "";
+                }
+            }else{
+                requestPermissions(new String[]{ Manifest.permission.READ_PHONE_STATE},100);
+            }
+
+            return imei;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+
+    }
     /**
      * 测试微信获取二维码的功能
      *
@@ -161,7 +215,7 @@ public class ActMain extends AppCompatActivity {
      */
     public void clsWechatPay(View view) {
         String time = System.currentTimeMillis() / 1000 + "";
-        PayUtils.getInstance().creatWechatQr(this, 12, "test" + time);
+        PayUtils.getInstance().creatWechatQr(this, 1, "test" + time);
     }
 
 
@@ -172,7 +226,8 @@ public class ActMain extends AppCompatActivity {
      */
     public void clsAlipayPay(View view) {
         String time = System.currentTimeMillis() / 1000 + "";
-        PayUtils.getInstance().creatAlipayQr(this, 12, "test" + time);
+//        Toast.makeText(this,"creatAlipayQr",1).show();
+        PayUtils.getInstance().creatAlipayQr(this, 1, "test" + time);
     }
 
     /**
@@ -204,9 +259,22 @@ public class ActMain extends AppCompatActivity {
         if (getIntent().hasExtra("auto")) {
             clsSubmit(null);
         }
+
+        saveToken();
     }
 
-
+    private void saveToken(){
+        File dir=new File(APP_ROOT_PATH);
+        if (!dir.exists()){
+            dir.mkdirs();
+        }
+        File file=new File(dir,fileName);
+        try {
+            IOUtil.writeStr(new FileOutputStream(file),Configer.getInstance().getToken());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     /**
      * 在状态栏添加图标
      */
@@ -269,23 +337,27 @@ public class ActMain extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        //获取到了权限之后才可以启动xxxx操作。
-        for (int i = 0; i < grantResults.length; i++) {
-            if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
-                Toast.makeText(this, "部分权限未开启\n可能部分功能暂时无法工作。", Toast.LENGTH_SHORT).show();
-                //如果被永久拒绝。。。那只有引导跳权限设置页
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (!shouldShowRequestPermissionRationale(permissions[i])) {
-                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                        intent.setData(Uri.parse("package:" + getPackageName())); // 根据包名打开对应的设置界面
-                        startActivity(intent);
-                        onPermissionOk();
-                        return;
+        if (requestCode==100){
+            LogUtils.show("IMEI:"+getIMEI(this));
+        }else {
+            //获取到了权限之后才可以启动xxxx操作。
+            for (int i = 0; i < grantResults.length; i++) {
+                if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                    Toast.makeText(this, "部分权限未开启\n可能部分功能暂时无法工作。", Toast.LENGTH_SHORT).show();
+                    //如果被永久拒绝。。。那只有引导跳权限设置页
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        if (!shouldShowRequestPermissionRationale(permissions[i])) {
+                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            intent.setData(Uri.parse("package:" + getPackageName())); // 根据包名打开对应的设置界面
+                            startActivity(intent);
+                            onPermissionOk();
+                            return;
+                        }
                     }
+                    break;
                 }
-                break;
             }
+            onPermissionOk();
         }
-        onPermissionOk();
     }
 }

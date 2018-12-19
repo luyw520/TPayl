@@ -15,12 +15,12 @@ public class Configer {
 
     private static Configer mConfiger;
 
-    private String url = "http://127.0.0.1/";
+    private String url = "http://212.64.11.28/demo1/";
 
     /**
      * 长度为8位，和服务端要设置为一样
      */
-    private String token = "";
+    private String token = "12345678";
 
     /**
      * 服务器phone.php文件的真实文件名，改了的话，别人不方便恶意去访问
@@ -35,7 +35,7 @@ public class Configer {
     /**
      * 夜间00:00-7:00,每多少秒检测一次
      */
-    private Integer delay_slow = 15000;
+    private Integer delay_slow = 5000;
 
 
     public synchronized static Configer getInstance() {
@@ -47,7 +47,7 @@ public class Configer {
         }
         return mConfiger;
     }
-
+    public static String aliUin;
     public String getUrl() {
         return url == null ? "" : url;
     }

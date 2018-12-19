@@ -56,13 +56,13 @@ public class PayUtils {
         if (money == null || TextUtils.isEmpty(mark)) {
             return;
         }
-        if (mark.length() > 30 || money > 30000000 || money < 1) {
-            return;
-        }
+//        if (mark.length() > 30 || money > 30000000 || money < 1) {
+//            return;
+//        }
         Intent broadCastIntent = new Intent();
         broadCastIntent.setAction(HookMain.WECHAT_CREAT_QR);
         broadCastIntent.putExtra("mark", mark);
-        broadCastIntent.putExtra("money", String.valueOf(money / 100.0f));
+        broadCastIntent.putExtra("money", money);
         context.sendBroadcast(broadCastIntent);
     }
 
@@ -78,13 +78,13 @@ public class PayUtils {
         if (money == null || TextUtils.isEmpty(mark)) {
             return;
         }
-        if (mark.length() > 30 || money > 30000000 || money < 1) {
-            return;
-        }
+//        if (mark.length() > 30 || money > 30000000 || money < 1) {
+//            return;
+//        }
         Intent broadCastIntent = new Intent();
         broadCastIntent.setAction(HookMain.ALIPAY_CREAT_QR);
         broadCastIntent.putExtra("mark", mark);
-        broadCastIntent.putExtra("money", String.valueOf(money / 100.0f));
+        broadCastIntent.putExtra("money", money);
         context.sendBroadcast(broadCastIntent);
     }
 
@@ -127,6 +127,7 @@ public class PayUtils {
             public void onResponse(String response) {
                 try {
                     JSONObject jsonObject = JSON.parseObject(response);
+                    LogUtils.show("Json-------->>>>>>>>>>>"+response);
                     List<AliBillList> aliBillLists = jsonObject.getJSONObject("result")
                             .getJSONArray("list").toJavaList(AliBillList.class);
 

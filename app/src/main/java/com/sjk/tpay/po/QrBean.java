@@ -69,7 +69,7 @@ public class QrBean {
     }
 
     public Integer getMoney() {
-        return money == null ? 0 : money;
+        return money;
     }
 
     public void setMoney(Integer money) {
